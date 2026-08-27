@@ -13,8 +13,7 @@ const schema = z.object({
   QSTASH_TOKEN: z.string().min(1),
   QSTASH_CURRENT_SIGNING_KEY: z.string().min(1),
   QSTASH_NEXT_SIGNING_KEY: z.string().min(1),
-  SWEEP_SECRET: z.string().min(16),
-  DISPLAY_TIME_ZONES: z.string().default("America/New_York,Europe/Berlin")
+  SWEEP_SECRET: z.string().min(16)
 });
 
 export type Env = z.infer<typeof schema>;

@@ -6,10 +6,6 @@ import { formatEventTime } from "@/lib/time";
 import type { EventRecord } from "@/lib/types";
 import { escapeHtml } from "@/emails/layout";
 
-function zones() {
-  return env().DISPLAY_TIME_ZONES.split(",").map((z) => z.trim()).filter(Boolean);
-}
-
 async function send(
   to: string,
   message: { subject: string; html: string; text: string },
@@ -25,7 +21,7 @@ async function send(
 export async function sendConfirmation(to: string, event: EventRecord, registrationId?: string) {
   return send(
     to,
-    confirmationEmail(event, formatEventTime(event.starts_at, zones())),
+    confirmationEmail(event, formatEventTime(event.starts_at)),
     registrationId ? `confirmation-${registrationId}` : undefined
   );
 }
@@ -38,7 +34,7 @@ export async function sendReminder(
 ) {
   return send(
     to,
-    reminderEmail(event, formatEventTime(event.starts_at, zones()), mode),
+    reminderEmail(event, formatEventTime(event.starts_at), mode),
     registrationId ? `reminder-${registrationId}` : undefined
   );
 }

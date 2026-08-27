@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { reminderTiming, sweepWindow } from "@/lib/time";
+import { formatEventTime, reminderTiming, sweepWindow } from "@/lib/time";
+
+describe("email time formatting", () => {
+  it("uses Seattle time with a capitalized Russian month", () => {
+    expect(formatEventTime("2026-08-28T02:07:00Z")).toBe(
+      "27 Августа 2026, 7:07 PM по времени Seattle"
+    );
+  });
+});
 
 describe("reminder timing", () => {
   it("schedules a future reminder exactly one hour before start", () => {

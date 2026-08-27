@@ -1,9 +1,15 @@
 import { formatInTimeZone } from "date-fns-tz";
+import { ru } from "date-fns/locale";
 
-export function formatEventTime(startsAt: string, zones: string[]) {
-  return zones.map((zone) =>
-    formatInTimeZone(startsAt, zone, "d MMMM yyyy, HH:mm zzz")
-  ).join(" / ");
+const EMAIL_TIME_ZONE = "America/Los_Angeles";
+
+export function formatEventTime(startsAt: string) {
+  const dayAndYear = formatInTimeZone(startsAt, EMAIL_TIME_ZONE, "d yyyy");
+  const month = formatInTimeZone(startsAt, EMAIL_TIME_ZONE, "MMMM", { locale: ru });
+  const time = formatInTimeZone(startsAt, EMAIL_TIME_ZONE, "h:mm a");
+  const [day, year] = dayAndYear.split(" ");
+
+  return `${day} ${month[0].toUpperCase()}${month.slice(1)} ${year}, ${time} по времени Seattle`;
 }
 
 export function reminderWindow(now = new Date()) {
