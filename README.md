@@ -4,7 +4,7 @@
 - backend/ — Next.js API для Stripe, Supabase, Resend, QStash и sweep.
 
 Кнопка сайта сейчас ведёт на Stripe Payment Link
-https://buy.stripe.com/eVqfZg9fPgo33Ou7vobII03. В Payment Link требуется
+https://buy.stripe.com/6oU7sK63D2xddp47vobII01. В Payment Link требуется
 metadata event_id, равная events.id постоянного шаблона практики в Supabase.
 
 ## Развёртывание
