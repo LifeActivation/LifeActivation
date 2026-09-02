@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripeClient, supabaseAdmin } from "@/lib/clients";
 import { env } from "@/lib/env";
-import { maskEmail } from "@/lib/log";
+import { recordPaidCheckout } from "@/lib/checkout";
 import { notifyAdmin, sendConfirmation } from "@/lib/mail";
 import { cancelScheduledReminder, scheduleOrSendReminder } from "@/lib/reminders";
 import type { EventRecord } from "@/lib/types";
@@ -30,60 +30,6 @@ async function processConfirmation(registrationId: string) {
     await db.from("registrations").update({ confirmation_sending_at: null }).eq("id", registrationId);
     throw error;
   }
-}
-
-async function recordCompleted(session: Stripe.Checkout.Session) {
-  if (session.payment_status !== "paid") return null;
-  const email = session.customer_details?.email;
-  if (!email) {
-    console.error("Paid Checkout Session has no customer email", { sessionId: session.id });
-    return { adminAlert: `Stripe Session ${session.id}: отсутствует e-mail покупателя.` };
-  }
-
-  const db = supabaseAdmin();
-  const requestedEventId = session.metadata?.event_id ?? null;
-  let event: EventRecord | null = null;
-  if (requestedEventId) {
-    const result = await db.from("events").select("*").eq("id", requestedEventId).maybeSingle();
-    if (result.error) throw result.error;
-    event = result.data as EventRecord | null;
-  }
-
-  const row = {
-    event_id: event?.id ?? null,
-    email,
-    name: session.customer_details?.name ?? null,
-    stripe_session_id: session.id,
-    stripe_payment_intent_id: typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id ?? null,
-    amount_paid: session.amount_total ?? 0,
-    currency: session.currency ?? "unknown",
-    paid_at: new Date((session.created ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
-    status: "paid" as const
-  };
-
-  const { data: inserted, error: insertError } = await db.from("registrations")
-    .upsert(row, { onConflict: "stripe_session_id", ignoreDuplicates: true })
-    .select("id").maybeSingle();
-  if (insertError) throw insertError;
-  const wasInserted = Boolean(inserted);
-
-  let registrationId = inserted?.id as string | undefined;
-  if (!registrationId) {
-    const existing = await db.from("registrations").select("id, confirmation_sent_at")
-      .eq("stripe_session_id", session.id).single();
-    if (existing.error) throw existing.error;
-    registrationId = existing.data.id;
-  }
-
-  if (!event) {
-    console.error("Payment could not be linked to an event", {
-      sessionId: session.id, requestedEventId, email: maskEmail(email)
-    });
-    return wasInserted
-      ? { adminAlert: `Stripe Session ${session.id}; event_id: ${requestedEventId ?? "отсутствует"}; покупатель: ${maskEmail(email)}. Оплата сохранена.` }
-      : null;
-  }
-  return { registrationId };
 }
 
 async function handleRefund(charge: Stripe.Charge) {
@@ -115,9 +61,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     try {
-      const result = await recordCompleted(event.data.object);
+      // Use the signed successful-checkout event time, not when the checkout
+      // page was opened or when a delayed webhook happens to reach this server.
+      const result = await recordPaidCheckout(event.data.object, new Date(event.created * 1000));
       if (result && "registrationId" in result) {
         const registrationId = result.registrationId;
         if (!registrationId) throw new Error("Registration ID is missing");

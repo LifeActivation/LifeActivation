@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { formatEventTime, reminderTiming, sweepWindow } from "@/lib/time";
+import { formatEventTime, reminderTiming, sweepWindow, weeklyPractice } from "@/lib/time";
+
+describe("weekly practice payment window in Seattle", () => {
+  it.each([
+    ["2026-08-27T19:16:00-07:00", "2026-09-03", "2026-09-04T02:07:00.000Z"],
+    ["2026-09-01T12:00:00-07:00", "2026-09-03", "2026-09-04T02:07:00.000Z"],
+    ["2026-09-03T19:07:00-07:00", "2026-09-03", "2026-09-04T02:07:00.000Z"],
+    ["2026-09-03T19:15:59.999-07:00", "2026-09-03", "2026-09-04T02:07:00.000Z"],
+    ["2026-09-03T19:16:00-07:00", "2026-09-10", "2026-09-11T02:07:00.000Z"],
+    ["2026-09-10T19:16:00-07:00", "2026-09-17", "2026-09-18T02:07:00.000Z"],
+    ["2026-10-29T19:16:00-07:00", "2026-11-05", "2026-11-06T03:07:00.000Z"],
+    ["2027-03-11T19:16:00-08:00", "2027-03-18", "2027-03-19T02:07:00.000Z"],
+    ["2026-12-31T19:16:00-08:00", "2027-01-07", "2027-01-08T03:07:00.000Z"]
+  ])("routes payment at %s to %s", (paidAt, date, startsAt) => {
+    expect(weeklyPractice(new Date(paidAt))).toEqual({ date, startsAt });
+  });
+});
 
 describe("email time formatting", () => {
   it("uses Seattle time with a capitalized Russian month", () => {
