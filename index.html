@@ -10,10 +10,37 @@
      Всё остальное на странице обновится автоматически.
      ================================================================ -->
 <script>
+const ВРЕМЯ_СИЭТЛА = "America/Los_Angeles";
+
+function датаБлижайшейПрактики(сейчас = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: ВРЕМЯ_СИЭТЛА,
+    year: "numeric", month: "numeric", day: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23"
+  }).formatToParts(сейчас).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+  const date = new Date(Date.UTC(parts.year, Number(parts.month) - 1, parts.day));
+  let daysUntilThursday = (4 - date.getUTCDay() + 7) % 7;
+  const time = `${parts.hour}:${parts.minute}`;
+  // Keep today's card visible until 8 PM so late participants can still join.
+  if (daysUntilThursday === 0 && time >= "20:00") daysUntilThursday = 7;
+  date.setUTCDate(date.getUTCDate() + daysUntilThursday);
+
+  const formatted = new Intl.DateTimeFormat("ru-RU", {
+    timeZone: "UTC", day: "numeric", month: "long", year: "numeric"
+  }).formatToParts(date).reduce((result, part) => {
+    if (part.type !== "literal") result[part.type] = part.value;
+    return result;
+  }, {});
+  return `${formatted.day} ${formatted.month} ${formatted.year}`;
+}
+
 const МЕРОПРИЯТИЕ = {
   название:      "Четверговая АКТИВАЦИЯ ЖИЗНИ",
   подзаголовок:  "еженедельная практика",
-  дата:          "",
+  дата:          датаБлижайшейПрактики(),
   время:         "7:07 PM по времени Seattle",
 
   // ----- ПАКЕТЫ УЧАСТИЯ: название, цена, что входит, ссылка на оплату -----
