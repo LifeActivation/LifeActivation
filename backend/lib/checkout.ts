@@ -29,7 +29,8 @@ export async function recordPaidCheckout(session: Stripe.Checkout.Session, paidA
     const result = await db.from("events").select("*").eq("id", requestedEventId).maybeSingle();
     if (result.error) throw result.error;
     const template = result.data as EventRecord | null;
-    if (template) {
+    eventId = template?.id ?? null;
+    if (template?.id === "thursday-activation") {
       const practice = weeklyPractice(paidAt);
       eventId = `${template.id}:weekly:${practice.date}`;
       // Separate immutable rows keep earlier registrations/reminders on their
@@ -71,7 +72,7 @@ export async function recordPaidCheckout(session: Stripe.Checkout.Session, paidA
       ? { registrationId: winner.data.id as string } : null;
   }
   if (!eventId) {
-    console.error("Payment could not be linked to a weekly template", {
+    console.error("Payment could not be linked to an event", {
       sessionId: session.id, requestedEventId, email: maskEmail(email)
     });
     return { adminAlert: `Stripe Session ${session.id}; event_id: ${requestedEventId ?? "отсутствует"}; покупатель: ${maskEmail(email)}. Оплата сохранена, но практика не назначена.` };

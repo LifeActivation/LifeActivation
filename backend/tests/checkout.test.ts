@@ -4,6 +4,8 @@ import { recordPaidCheckout } from "@/lib/checkout";
 import { supabaseAdmin } from "@/lib/clients";
 import { formatEventTime } from "@/lib/time";
 import { confirmationEmail } from "@/emails/confirmation";
+import { reminderEmail } from "@/emails/reminder";
+import { reminderTiming } from "@/lib/time";
 import type { EventRecord } from "@/lib/types";
 
 vi.mock("@/lib/clients", () => ({ supabaseAdmin: vi.fn() }));
@@ -11,7 +13,7 @@ vi.mock("@/lib/clients", () => ({ supabaseAdmin: vi.fn() }));
 type Row = Record<string, any>;
 let tables: Record<string, Row[]>;
 const template: EventRecord = {
-  id: "weekly-practice", title: "Еженедельная практика", description: null,
+  id: "thursday-activation", title: "Еженедельная практика", description: null,
   starts_at: "2026-08-28T02:07:00Z", duration_minutes: 90,
   zoom_url: "https://zoom.example/j/123", zoom_passcode: "practice", status: "published"
 };
@@ -57,11 +59,36 @@ beforeEach(() => {
 });
 
 describe("weekly checkout registration", () => {
+  it.each([
+    "2026-09-08T12:00:00-07:00",
+    "2026-09-10T19:16:00-07:00",
+    "2026-09-10T20:09:00-07:00"
+  ])("keeps the new moon date, time and Zoom for payment at %s", async (paidAt) => {
+    const newMoon: EventRecord = {
+      ...template, id: "novolunie-2026-09-10",
+      title: "АКТИВАЦИЯ ЖИЗНИ в энергиях НОВОЛУНИЯ",
+      starts_at: "2026-09-11T03:08:00.000Z",
+      zoom_url: "https://zoom.example/j/new-moon", zoom_passcode: "new-moon"
+    };
+    tables.events.push(newMoon);
+    await recordPaidCheckout({ ...session(), metadata: { event_id: newMoon.id } }, new Date(paidAt));
+    expect(tables.registrations[0].event_id).toBe(newMoon.id);
+    expect(tables.events).toEqual([template, newMoon]);
+    const assigned = tables.events.find(row => row.id === tables.registrations[0].event_id) as EventRecord;
+    for (const email of [confirmationEmail(assigned, formatEventTime(assigned.starts_at)), reminderEmail(assigned, formatEventTime(assigned.starts_at))]) {
+      expect(email.text).toContain("10 Сентября 2026, 8:08 PM по времени Seattle");
+      expect(email.text).toContain(newMoon.zoom_url);
+      expect(email.text).toContain(newMoon.title);
+    }
+    expect(reminderTiming(assigned.starts_at, new Date("2026-09-08T12:00:00-07:00")).reminderAt.toISOString())
+      .toBe("2026-09-11T02:08:00.000Z");
+  });
+
   it("saves the paid week and uses its date and constant Zoom URL in the email", async () => {
     const paidAt = new Date("2026-09-03T19:16:00-07:00");
     await recordPaidCheckout(session(), paidAt);
     expect(tables.registrations[0]).toMatchObject({
-      event_id: "weekly-practice:weekly:2026-09-10", paid_at: paidAt.toISOString()
+      event_id: "thursday-activation:weekly:2026-09-10", paid_at: paidAt.toISOString()
     });
     const practice = tables.events[1] as EventRecord;
     expect(practice.starts_at).toBe("2026-09-11T02:07:00.000Z");
@@ -78,7 +105,7 @@ describe("weekly checkout registration", () => {
     await recordPaidCheckout(session(), new Date("2026-09-10T19:16:00-07:00"));
     expect(tables.registrations).toEqual([saved]);
     expect(tables.events).toHaveLength(2);
-    expect(saved.event_id).toBe("weekly-practice:weekly:2026-09-03");
+    expect(saved.event_id).toBe("thursday-activation:weekly:2026-09-03");
   });
 
   it("keeps two payments from the same email separate and reuses the week's event", async () => {
