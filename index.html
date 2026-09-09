@@ -27,6 +27,8 @@ function датаБлижайшейПрактики(сейчас = new Date()) {
   // Keep today's card visible until 8 PM so late participants can still join.
   if (daysUntilThursday === 0 && time >= "20:00") daysUntilThursday = 7;
   date.setUTCDate(date.getUTCDate() + daysUntilThursday);
+  // September 10 is reserved for the separate New Moon practice.
+  if (date.toISOString().slice(0, 10) === "2026-09-10") date.setUTCDate(date.getUTCDate() + 7);
 
   const formatted = new Intl.DateTimeFormat("ru-RU", {
     timeZone: "UTC", day: "numeric", month: "long", year: "numeric"

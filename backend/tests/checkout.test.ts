@@ -88,12 +88,12 @@ describe("weekly checkout registration", () => {
     const paidAt = new Date("2026-09-03T19:16:00-07:00");
     await recordPaidCheckout(session(), paidAt);
     expect(tables.registrations[0]).toMatchObject({
-      event_id: "thursday-activation:weekly:2026-09-10", paid_at: paidAt.toISOString()
+      event_id: "thursday-activation:weekly:2026-09-17", paid_at: paidAt.toISOString()
     });
     const practice = tables.events[1] as EventRecord;
-    expect(practice.starts_at).toBe("2026-09-11T02:07:00.000Z");
+    expect(practice.starts_at).toBe("2026-09-18T02:07:00.000Z");
     const email = confirmationEmail(practice, formatEventTime(practice.starts_at));
-    expect(email.text).toContain("10 Сентября 2026, 7:07 PM по времени Seattle");
+    expect(email.text).toContain("17 Сентября 2026, 7:07 PM по времени Seattle");
     expect(email.text).toContain(template.zoom_url);
     expect(practice.zoom_passcode).toBe(template.zoom_passcode);
     expect(tables.events[0]).toEqual(template);

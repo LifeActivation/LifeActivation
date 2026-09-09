@@ -11,6 +11,8 @@ export function weeklyPractice(paidAt: Date) {
   const localTime = formatInTimeZone(paidAt, EMAIL_TIME_ZONE, "HH:mm:ss");
   if (daysAhead === 0 && localTime >= "19:16:00") daysAhead = 7;
   calendar.setUTCDate(calendar.getUTCDate() + daysAhead);
+  // September 10 is reserved for the separate New Moon practice.
+  if (calendar.toISOString().slice(0, 10) === "2026-09-10") calendar.setUTCDate(calendar.getUTCDate() + 7);
   const date = calendar.toISOString().slice(0, 10);
   return {
     date,
