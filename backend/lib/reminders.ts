@@ -3,7 +3,7 @@ import { qstashClient, supabaseAdmin } from "@/lib/clients";
 import { env } from "@/lib/env";
 import { maskEmail } from "@/lib/log";
 import { notifyAdmin, sendReminder } from "@/lib/mail";
-import { reminderTiming } from "@/lib/time";
+import { recordingOnly, reminderTiming } from "@/lib/time";
 import type { EventRecord, RegistrationRecord } from "@/lib/types";
 
 export type DeliverySource = "qstash" | "sweep" | "immediate";
@@ -32,6 +32,11 @@ export async function deliverReminder(
   }
 
   const timing = reminderTiming(registration.events.starts_at);
+  if (recordingOnly(registration.events)) {
+    const release = await db.from("registrations").update({ reminder_sending_at: null }).eq("id", registrationId);
+    if (release.error) throw release.error;
+    return { sent: false, reason: "recording-only" as const };
+  }
   const mode: ReminderMode = forcedMode ?? (
     timing.kind === "started" ? "started" : timing.kind === "immediate" ? "soon" : "hour"
   );
@@ -61,6 +66,7 @@ export async function scheduleOrSendReminder(registrationId: string) {
   if (result.error) throw result.error;
   const registration = result.data as RegistrationRecord & { events: EventRecord | null };
   if (registration.status !== "paid" || !registration.events || registration.reminder_sent_at) return;
+  if (recordingOnly(registration.events)) return;
 
   const timing = reminderTiming(registration.events.starts_at);
   if (timing.kind !== "scheduled") {

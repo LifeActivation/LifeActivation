@@ -1,7 +1,15 @@
 import { emailLayout, escapeHtml, zoomButton } from "@/emails/layout";
 import type { EventRecord } from "@/lib/types";
+import { recordingOnly } from "@/lib/time";
 
-export function confirmationEmail(event: EventRecord, time: string) {
+export function confirmationEmail(event: EventRecord, time: string, now = new Date()) {
+  if (recordingOnly(event, now)) {
+    return {
+      subject: `Спасибо за оплату! Запись практики «${event.title}»`,
+      html: emailLayout(`<h1>Спасибо за оплату!</h1><p>Практика «${escapeHtml(event.title)}» уже завершилась.</p><p>Запись практики будет отправлена на эту почту.</p><p>Если возникнут вопросы, ответьте на это письмо.</p>`),
+      text: `Спасибо за оплату!\n\nПрактика «${event.title}» уже завершилась.\nЗапись практики будет отправлена на эту почту.\n\nЕсли возникнут вопросы, ответьте на это письмо.`
+    };
+  }
   const pass = event.zoom_passcode ? `<p><strong>Пароль:</strong> ${escapeHtml(event.zoom_passcode)}</p>` : "";
   const title = escapeHtml(event.title);
   const safeTime = escapeHtml(time);

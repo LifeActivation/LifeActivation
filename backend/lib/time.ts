@@ -3,6 +3,12 @@ import { ru } from "date-fns/locale";
 
 const EMAIL_TIME_ZONE = "America/Los_Angeles";
 
+// Recording purchase windows for the two September special practices.
+export function recordingOnly(event: { id: string; starts_at: string }, now = new Date()) {
+  return ["equinox-2026-09-22", "polnolunie-2026-09-26"].includes(event.id)
+    && now.getTime() >= new Date(event.starts_at).getTime() + 40 * 60_000;
+}
+
 // Calendar arithmetic is deliberately independent of the server's timezone.
 export function weeklyPractice(paidAt: Date) {
   const localDate = formatInTimeZone(paidAt, EMAIL_TIME_ZONE, "yyyy-MM-dd");
