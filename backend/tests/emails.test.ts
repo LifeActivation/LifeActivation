@@ -10,6 +10,20 @@ const event: EventRecord = {
 };
 
 describe("email templates", () => {
+  it("uses morning time in both emails without changing evening time", () => {
+    for (const render of [confirmationEmail, reminderEmail]) {
+      const morning = render({ ...event, id: "healing-morning-2026-11-06" }, "time");
+      const evening = render({ ...event, id: "healing-evening-2026-11-06" }, "time");
+      for (const body of [morning.text, morning.html]) {
+        expect(body).toContain("11:00 AM–12:30 PM");
+        expect(body).not.toContain("7:00–8:30 PM");
+        expect(body).not.toContain("Zoom");
+        expect(body).toContain("14040 NE 8th St");
+        expect(body).toContain("+1 (206) 255-6802");
+      }
+      expect(evening.text).toContain("7:00–8:30 PM");
+    }
+  });
   it("sends the in-person details without Zoom in confirmation and reminders", () => {
     const healing = { ...event, id: "healing-evening-2026-11-06", starts_at: "2026-11-07T03:00:00Z" };
     const emails = [confirmationEmail(healing, "time"), ...(["hour", "soon", "started"] as const).map(mode => reminderEmail(healing, "time", mode))];

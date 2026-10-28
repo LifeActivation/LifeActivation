@@ -86,6 +86,12 @@ Zoom не выводится. Пустой `zoom_url` сохраняется д�
 
 ## Настройка QStash
 
+Утренняя встреча 6 ноября использует тот же текст с временем 11:00 AM–12:30 PM.
+Payment Link: `https://buy.stripe.com/7sY28qajT7Rx70G6rkbII05`.
+Metadata: `event_id = healing-morning-2026-11-06`.
+Запись базы: `supabase/migrations/005_healing_morning.sql`.
+Начало 19:00 UTC, напоминание 18:00 UTC (10:00 AM Bellevue).
+
 Скопируйте token и обе signing keys из Upstash Console. После обычной оплаты
 создаётся одно сообщение на BACKEND_URL/api/qstash/send-reminder с одним
 registrationId. Endpoint проверяет подпись QStash.

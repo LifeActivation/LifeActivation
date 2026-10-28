@@ -1,9 +1,10 @@
 import { emailLayout, escapeHtml, zoomButton } from "@/emails/layout";
 import type { EventRecord } from "@/lib/types";
 import { recordingOnly } from "@/lib/time";
-import { HEALING_EVENING_ID, healingEveningEmail } from "@/emails/healing-evening";
+import { HEALING_EVENING_ID, HEALING_MORNING_ID, healingEveningEmail } from "@/emails/healing-evening";
 
 export function confirmationEmail(event: EventRecord, time: string, now = new Date()) {
+  if (event.id === HEALING_MORNING_ID) return healingEveningEmail(undefined, true);
   if (event.id === HEALING_EVENING_ID) return healingEveningEmail();
   if (recordingOnly(event, now)) {
     return {
