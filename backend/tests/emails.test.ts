@@ -10,6 +10,22 @@ const event: EventRecord = {
 };
 
 describe("email templates", () => {
+  it("sends the in-person details without Zoom in confirmation and reminders", () => {
+    const healing = { ...event, id: "healing-evening-2026-11-06", starts_at: "2026-11-07T03:00:00Z" };
+    const emails = [confirmationEmail(healing, "time"), ...(["hour", "soon", "started"] as const).map(mode => reminderEmail(healing, "time", mode))];
+    for (const email of emails) {
+      for (const body of [email.html, email.text]) {
+        expect(body).toContain("14040 NE 8th St, Suite 300");
+        expect(body).toContain("+1 (206) 255-6802");
+        expect(body).toContain("Коврик для йоги");
+        expect(body).toContain("7:00–8:30 PM");
+        expect(body).not.toContain("Zoom");
+        expect(body).not.toContain(event.zoom_url);
+      }
+    }
+    expect(emails[1].subject).toContain("Через час");
+    expect(emails[3].text).not.toContain("прийти за 5–10 минут");
+  });
   it.each([
     ["equinox-2026-09-22", "2026-09-22T17:05:00-07:00"],
     ["polnolunie-2026-09-26", "2026-09-26T09:30:00-07:00"]
