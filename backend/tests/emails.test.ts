@@ -10,6 +10,20 @@ const event: EventRecord = {
 };
 
 describe("email templates", () => {
+  it("uses December 4 in confirmation and reminders while preserving November emails", () => {
+    for (const render of [confirmationEmail, reminderEmail]) {
+      const december = render({ ...event, id: "healing-morning-2026-12-04", starts_at: "2026-12-04T19:00:00Z" }, "time");
+      for (const body of [december.html, december.text]) {
+        expect(body).toContain("4 декабря 2026");
+        expect(body).toContain("11:00 AM–12:30 PM");
+        expect(body).toContain("14040 NE 8th St");
+        expect(body).toContain("+1 (206) 255-6802");
+        expect(body).not.toContain("6 ноября");
+        expect(body).not.toContain("Zoom");
+      }
+      expect(render({ ...event, id: "healing-morning-2026-11-06" }, "time").text).toContain("6 ноября 2026");
+    }
+  });
   it("uses morning time in both emails without changing evening time", () => {
     for (const render of [confirmationEmail, reminderEmail]) {
       const morning = render({ ...event, id: "healing-morning-2026-11-06" }, "time");

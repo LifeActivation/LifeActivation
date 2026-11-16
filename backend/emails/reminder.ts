@@ -1,10 +1,11 @@
 import { emailLayout, escapeHtml, zoomButton } from "@/emails/layout";
 import type { EventRecord } from "@/lib/types";
-import { HEALING_EVENING_ID, HEALING_MORNING_ID, healingEveningEmail } from "@/emails/healing-evening";
+import { HEALING_EVENING_ID, HEALING_MORNING_ID, HEALING_DECEMBER_ID, healingEveningEmail } from "@/emails/healing-evening";
 
 export type ReminderMode = "hour" | "soon" | "started";
 
 export function reminderEmail(event: EventRecord, time: string, mode: ReminderMode = "hour") {
+  if (event.id === HEALING_DECEMBER_ID) return healingEveningEmail(mode, true, "4 декабря");
   if (event.id === HEALING_MORNING_ID) return healingEveningEmail(mode, true);
   if (event.id === HEALING_EVENING_ID) return healingEveningEmail(mode);
   const pass = event.zoom_passcode ? `<p><strong>Пароль:</strong> ${escapeHtml(event.zoom_passcode)}</p>` : "";
